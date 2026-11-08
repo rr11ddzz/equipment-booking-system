@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Custom CSS styles */
+        body{
+            background-color: rgb(252, 252, 237);
+        }
+        .card {
+            margin-bottom: 30px;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 1.0s ease;
+        }
+        .card:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .card-text {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #495057;
+            border-color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if user.is_authenticated %}
+        <form method="GET" action="{% url 'user_profile' %}" class="mb-4">
+            <button class="btn btn-primary mt-4">Profile</button>
+            <a href="{% url 'logout_view' %}" class="btn btn-primary mt-4">Logout</a>
+        </form>
+        {% endif %}
+        
+        <h1 class="my-4">Welcome to the Home Page</h1>
+        <!-- Search form -->
+        <form method="GET" action="{% url 'home' %}" class="mb-4">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <select class="form-control" name="sort_by">
+                        <option value="">-- Select Sorting Option --</option>
+                        <option value="name_az">Sort by Name (A-Z)</option>
+                        <option value="type">Sort by Equipment Type</option>
+                        <option value="availability">Sort by Equipment Availability</option>
+                        <option value="return_date">Sort by Return Date</option>
+                    </select>
+                </div>
+                <div class="input-group col-md-9 mb-3">
+                    <input type="text" class="form-control" placeholder="Search equipment" name="q" value="{{ request.GET.q }}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Equipment cards -->
+        {% if bookings %}
+        {% for booking in bookings %}
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ booking.equipment.DeviceName }}</h5>
+                        <p class="card-text">Serial: {{ booking.equipment.DeviceSerial }}</p>
+                        <p class="card-text">Type: {{ booking.equipment.DeviceTypeID }}</p>
+                        <p class="card-text">CPU: {{ booking.equipment.CPUID.Brand }} {{ booking.equipment.CPUID.Model }}</p>
+                        <p class="card-text">GPU: {{ booking.equipment.GPUID.Brand }} {{ booking.equipment.GPUID.Model }}</p>
+                        <p class="card-text">RAM: {{ booking.equipment.RAMID.Capacity }}GB {{ booking.equipment.RAMID.Type }} RAM</p>
+                        <p class="card-text">Return Date: {{ booking.return_date }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        {% for equipment in all_equipment %}
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ equipment.DeviceName }}</h5>
+                        <p class="card-text">Serial: {{ equipment.DeviceSerial }}</p>
+                        <p class="card-text">Type: {{ equipment.DeviceTypeID }}</p>
+                        <p class="card-text">CPU: {{ equipment.CPUID.Brand }} {{ equipment.CPUID.Model }}</p>
+                        <p class="card-text">GPU: {{ equipment.GPUID.Brand }} {{ equipment.GPUID.Model }}</p>
+                        <p class="card-text">RAM: {{ equipment.RAMID.Capacity }}GB {{ equipment.RAMID.Type }} RAM</p>
+                        <a href="{% url 'booking_page' equipment.pk %}" class="btn btn-primary">Initiate Reservation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

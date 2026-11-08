@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Custom CSS */
+        body{
+            background-color: rgb(252, 252, 237);
+        }
+        .card {
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .card-text {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #495057;
+            border-color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if messages %}
+                        {% for message in messages %}
+                                <div class="alert alert-success" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+        <h1 class="my-4">User Profile</h1>
+        <!-- User Information Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">User Information</h5>
+                <p class="card-text">Username: {{ user.username }}</p>
+                <p class="card-text">Email: {{ user.email }}</p>
+                <p class="card-text">First Name: {{ user.first_name }}</p>
+                <p class="card-text">Last Name: {{ user.last_name }}</p>
+            </div>
+        </div>
+        <!-- Booking Section -->
+        <h5 class="mb-3">Reservation</h5>
+        <div class="row">
+            {% for booking in booking %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Reservation Details</h5>
+                        <p class="card-text">Equipment: {{ booking.equipment.DeviceName }}</p>
+                        <p class="card-text">Reservation Date: {{ booking.booking_date }}</p>
+                        <p class="card-text">Return Date: {{ booking.return_date }}</p>
+                        <p class="card-text">Status: {{ booking.status }}</p>
+                        <p class="card-text">Alert Status: {{ booking.alert_status }}</p>
+                        <p class="card-text">Admin Approval Status: {{ booking.admin_approval }}</p>
+                        <form method="GET" action="{% url 'cancel_reservation' booking.pk %}" class="mb-4">
+                            <button class="btn btn-primary mt-4">Cancel Reservation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
