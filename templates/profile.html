@@ -78,9 +78,12 @@
                         <p class="card-text">Status: {{ booking.status }}</p>
                         <p class="card-text">Alert Status: {{ booking.alert_status }}</p>
                         <p class="card-text">Admin Approval Status: {{ booking.admin_approval }}</p>
-                        <form method="GET" action="{% url 'cancel_reservation' booking.pk %}" class="mb-4">
+                        {% if booking.status == "Pending" or booking.status == "Approved" %}
+                        <form method="POST" action="{% url 'cancel_reservation' booking.pk %}" class="mb-4">
+                            {% csrf_token %}
                             <button class="btn btn-primary mt-4">Cancel Reservation</button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>

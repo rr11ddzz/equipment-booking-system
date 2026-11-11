@@ -2,7 +2,11 @@ from django.shortcuts import render, redirect,HttpResponse
 from django.contrib.auth import login, authenticate,logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ReservationForm
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseForbidden
+from django.db import transaction
+from django.db.models import Q
 from .models import Equipment,Booking
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -71,30 +75,45 @@ def logout_view(request):
     return redirect('home')
 
 @login_required(login_url='login')
-def booking_page(request,equipment_id):
-    equipment = Equipment.objects.get(pk=equipment_id)    
-    return render(request, "booking_page.html",{'equipment':equipment})
+def booking_page(request, equipment_id):
+    equipment = get_object_or_404(Equipment, pk=equipment_id)
+    return render(request, 'booking_page.html', {'equipment': equipment, 'form': ReservationForm()})
+
 
 @login_required(login_url='login')
-def initiate_reservation(request,equipment_id):
-    equipment = get_object_or_404(Equipment, pk=equipment_id)
-    if request.method == 'POST':
-        booking_date = request.POST.get('booking_date')
-        return_date = request.POST.get('return_date')
-        my_booking = Booking(user = request.user,return_date=return_date, equipment=equipment, booking_date=booking_date)
-        my_booking.save()
-        messages.success(request, 'reservation added by hasnat for my device')
-    
-    return redirect('user_profile')
+@require_POST
+def initiate_reservation(request, equipment_id):
+    if not request.user.ApprovalStatus:
+        return HttpResponseForbidden('Account approval is required to reserve equipment.')
+    form = ReservationForm(request.POST)
+    with transaction.atomic():
+        equipment = get_object_or_404(Equipment.objects.select_for_update(), pk=equipment_id)
+        if form.is_valid():
+            start, end = form.cleaned_data['booking_date'], form.cleaned_data['return_date']
+            conflicts = Booking.objects.filter(
+                equipment=equipment, status__in=['Pending', 'Approved'], booking_date__lte=end,
+            ).exclude(admin_approval='Rejected').filter(Q(return_date__gte=start) | Q(return_date__isnull=True))
+            if not equipment.Availability:
+                form.add_error(None, 'This equipment is currently unavailable.')
+            elif conflicts.exists():
+                form.add_error(None, 'This equipment is already reserved during those dates. Choose another date range.')
+            else:
+                Booking.objects.create(user=request.user, equipment=equipment, booking_date=start, return_date=end)
+                messages.success(request, 'Your reservation has been submitted for approval.')
+                return redirect('user_profile')
+    return render(request, 'booking_page.html', {'equipment': equipment, 'form': form}, status=400)
+
+
 @login_required(login_url='login')
 def user_profile(request):
-    user = request.user
-    my_booking = Booking.objects.filter(user = user)
-    return render(request ,"profile.html", {'user':user,'booking':my_booking})
+    bookings = Booking.objects.filter(user=request.user).select_related('equipment').order_by('-booking_date')
+    return render(request, 'profile.html', {'user': request.user, 'booking': bookings})
+
 
 @login_required(login_url='login')
-def cancel_reservation(request,pk):
-    user = request.user
-    my_booking = Booking.objects.get(pk = pk)
-    my_booking.delete()
+@require_POST
+def cancel_reservation(request, pk):
+    booking = get_object_or_404(Booking, pk=pk, user=request.user)
+    # Preserve the reservation history; returned bookings must not be rewritten.
+    Booking.objects.filter(pk=booking.pk, status__in=['Pending', 'Approved']).update(status='Cancelled')
     return redirect('user_profile')
